@@ -117,6 +117,12 @@ exit
 banner motd $21 is a prime number.$
 ```
 
+### Displays information for each translation table entry
+
+```
+show ip nat translations
+```
+
 ## Routing
 
 ### Configure the IPv4 addresses of the interfaces
@@ -184,6 +190,8 @@ network X.X.X.X     (address of the 2nd network in which the router has an inter
 exit
 ```
 
+> **Observation** : `no auto-summary` allows to obtain subnet masks according to the configuration of the interfaces.
+
 ### Configure static routes
 
 ```
@@ -194,9 +202,9 @@ exit
 show ip route
 ```
 
-> **Caption** :
-> X.X.X.X the network address
-> Y.Y.Y.Y the subnet mask
+> **Caption** :  
+> X.X.X.X the network address  
+> Y.Y.Y.Y the subnet mask  
 > Z.Z.Z.Z the next hop address OR the outbound interface (FastEthernet0/0 for example)
 
 ### Configure the clock for wired networks with serial cables
@@ -209,6 +217,57 @@ interface Serial 0/0/X      (with X the correct serial number)
 clock rate X                (with X the flow rate in bauds, for example 2000000)
 no shutdown
 exit
+```
+
+### Configure a trunk link
+
+#### Clear the IP address of the master interface
+
+```
+interface FastEthernet 0/1
+no ip address
+no shutdown
+exit
+```
+
+#### Set up a vlan number on a sub interface
+
+```
+interface FastEthernet 0/1.1
+encapsulation dot1q 11
+ip adddress 192.168.1.1 255.255.255.0
+no shutdown
+exit
+```
+
+> **Notice** : The native vlan must not be specified on the router although it must be set up on the switch.
+
+### Set up a DHCP server
+
+```
+enable
+ip dhcp excluded-address 192.168.10.1
+ip dhcp pool LAN-POOL-1
+network 192.168.10.0 255.255.255.0
+default-router 192.168.10.1            (default gateway)
+(optional) dns-server 192.168.11.5
+(optional) domain-name example.com
+end
+```
+
+### PAT configuration with only one external address
+
+```
+conf t
+ip nat inside source list 1 interface FastEthernet4 overload   (FastEthernet4 is the outbound interface)
+access-list 1 permit 192.168.20.0 0.0.0.255
+exit
+conf t
+interface Vlan1                                                (Vlan1 is the inbound interface)
+ip nat inside
+exit
+interface FastEthernet4                                        (FastEthernet4 is the outbound interface)
+ip nat outside
 ```
 
 ## Switching
@@ -233,16 +292,34 @@ vlan 4
 name MyVLAN
 ```
 
+> **Warning** :
+>
+> - The `conf t` command should be replaced by the `vlan database` command on old switches.
+> - NEVER modify vlan 1 since it is the default vlan.
+
 ### Configuring the ports of a VLAN
 
 ```
 enable
-show vlan                   (to find out in which VLAN each interface is located)
+show vlan                     (to find out in which VLAN each interface is located)
 config-t
-interface FastEthernet0/X   (X = interface number)
+interface FastEthernet0/X     (X = interface number)
 switchport mode access
-switchport access vlan X    (X = the number of the VLAN to which we want the interface to belong)
+switchport access vlan X      (X = the number of the VLAN to which we want the interface to belong)
 exit
+```
+
+### Set up a trunk link with a router
+
+> **Prerequisite** : The encapsulated VLANs (11 and 2 in the following example) must have been configured.
+
+```
+conf t
+int fe0/4
+switchport mode trunk
+switchport trunk native vlan 99
+switchport trunk allowed vlan 11,2,99
+end
 ```
 
 ### Remote management through SSH
@@ -265,7 +342,6 @@ exit
 ### Configure the ip address of a PC (under CentOS 7) :
 
 ```
-
 Click on the icon of the 2 cables connected at the bottom right (Or System Settings then Network)
 Click on the gear
 IPv4
@@ -273,7 +349,6 @@ In "Addresses" Change Automatic (DHCP) to "Manual".
 Fill in the fields that appear
 Apply
 Then disconnect, reconnect with the widget that slides from left to right
-
 ```
 
 ---
@@ -425,7 +500,7 @@ configurer liaison trunk :
 conf t
 int fe0/4
 switchport mode trunk
-switchport trun native vlan 99
+switchport trunk native vlan 99
 switchport trunk allowed vlan 10,20,30,99
 end
 
@@ -593,9 +668,10 @@ ip nat outside
 
 Configuration de PAT avec une seule addresse externe :
 conf t
-ip nat inside source list 1 interface serial FastEthernet4 overload (FastEthernet4 est l'interface du réseau externe)
+ip nat inside source list 1 interface FastEthernet4 overload (FastEthernet4 est l'interface du réseau externe)
 access-list 1 permit 192.168.20.0 0.0.0.255
 exit
+conf t
 interface Vlan1 (Vlan1 est l'interface du réseau interne)
 ip nat inside
 exit

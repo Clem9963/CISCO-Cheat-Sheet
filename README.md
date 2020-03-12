@@ -328,12 +328,13 @@ ip nat outside
 
 ```
 conf t
-ip nat pool NAT-POOL1 209.165.200.226
-netmask 255.255.255.224
+ip nat pool NAT-POOL1 209.165.200.226 209.165.200.240 netmask 255.255.255.224
 access-list 1 permit 192.168.0.0 0.0.255.255
 ip nat inside source list 1 pool NAT-POOL1
 int serial 0/0/0
 ip nat inside
+int serial 0/1/0
+ip nat outside
 ```
 
 #### PAT

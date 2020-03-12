@@ -14,20 +14,20 @@ What are reliable networks?
 ### Initial hardware cabling
 
 - Turn on the device.
-- Connect it with a RJ45 cable between a PC and the console port.
+- Connect a console cable to the console port of the device and connect the other end to the PC.
 - Open the terminal and issue the command `minicom`.
 
 ### Minicom
 
-#### In case of problems
+#### In case of troubles
 
-In order to be able to see all the data that are transmitted through the console port, you should start `minicom`.  
-If there is a problem, you can issue : `minicom -s` or press the following hotkeys : `Ctrl-A Z` if minicom is already running.
+In order to be able to see all the data that are transmitted through the console port, you should start the modem control and terminal emulation program : `minicom`.  
+If there is a problem, you can either issue : `minicom -s` or press the following hotkeys : `Ctrl-A Z` In the event that minicom is already running.
 
 #### Configure the console port.
 
 ```
-/dev/modem -> /dev/ttyS1 or /dev/ttyS0 (test the 2 beacause no there is no other way to find out)
+/dev/modem -> /dev/ttyS1 or /dev/ttyS0 (test the 2 because there is no other way to find out)
 Press enter
 Change the Flow Rate to 9600
 Press echap
@@ -38,85 +38,100 @@ Press enter
 
 ## Miscellaneous
 
-### Debugger's arsenal
+### Debugging
+
+#### Generic debugging and logging commands
+
+The command `tracert` can be used on Windows to display the route and measure transit delays of packets across an Internet Protocol network.
+
+Down below is written a set of commands which can be entered on any CISCO device for debugging purposes.
 
 ```
-tracert              (Trace route on Windows)
-traceroute           (Determine the route to a destination by sending ICMP echo packets)
-ping                 (Send ICMP echo packets to a specified host)
-debug ip icmp        (Enable ICMP log messages)
-debug ip nat         (Enable NAT log messages)
-undebug all          (Stop all the debugs)
-no debup ip icmp     (Disable the ICMP log messages)
-terminal monitor     (Let the logs appear on a remote management session)
-
-show startup-config
 show running-config
 show running-config interface fastethernet0/1
 show running-config | section interface g0/0
-
+show log | include changed state to up
+show startup-config
+terminal monitor                    (Let the logs appear on a remote management session)
 show version                        (Show the IOS version)
+show access-lists                   (Show ACLs)
+show port-security interface fe0/1  (Show the port security policy on a specific interface)
+show controllers serial             (Figure out which side on the point-to-point link is the DCE side or the DTE end)
+undebug all                         (Stop all the debugs)
+```
+
+#### Debugging commands on a router
+
+##### IP debug
+
+```
+traceroute                          (Determine the route to a destination by sending ICMP echo packets)
+ping                                (Send ICMP echo packets to a specified host)
+debug ip icmp                       (Enable ICMP log messages)
+no debup ip icmp                    (Disable the ICMP log messages)
+```
+
+##### Routing debug
+
+```
 show ip route                       (Show the IPv4 routing table)
 show ipv6 route                     (Show the IPv6 routing table)
 show ip route | begin Gateway       (Show the gateway of last resort)
 show ip route static                (Show the static routes)
-show port-security interface fe0/1  (Show the port Security policy on a specific interface)
-show interface vlan 10              (To display brief descriptive information)
-show access-lists                   (Show ACLs)
-clear access-lists 1                (Clear the ACL number 1)
+```
+
+##### CDP debug
+
+```
 show cdp                            (Display global CDP information)
-show cdp neighbors                  (Displays detailed information about neighboring devices discovered using CDP)
-show cdp interface fe0/1            (To display CDP information about the interface fe0/1)
+show cdp neighbors                  (Display detailed information about neighboring devices discovered using CDP)
+show cdp interface fe0/1            (Display CDP information about the interface fe0/1)
+```
+
+##### NAT & PAT debug
+
+```
+debug ip nat                        (Enable NAT log messages)
 show ip nat translations            (Show information about NAT translations that are active on the router)
 show ip nat statistics              (Show IP NAT translation statistics)
 clear ip nat translation            (To clear dynamic NAT translations from the translation table)
 ```
 
-### Logging
+##### Interfaces debug
 
 ```
-show logging | include changed state to up
+show ip interface brief             (IPv4 interface details)
+show ipv6 interface brief           (IPv6 interface details)
 ```
 
-### Display the IP addresses of the different interfaces
+##### DHCP debug
 
 ```
-show ip interface brief       (IPv4)
-show ipv6 interface brief     (IPv6)
+show running-config | section dhcp  (Show the current DHCP configuration)
+show ip dhcp binding                (To display IP-to-MAC address bindings)
+show ip dhcp server statistics      (Display extended DHCP local server statistics.)
+show ip dhcp conflict               (When hosts have statically assigned IP addresses that are within the DHCP range)
 ```
 
-### Display all the VLANs
+#### Debugging commands on a switch
 
 ```
-show vlan         (Detailed display)
-show vlan brief   (Summary display)
+show interface vlan 10              (Display brief descriptive information about a specific VLAN)
+show vlan                           (Detailed display of VLANs)
+show vlan brief                     (Summary display of VLANs)
 ```
 
-### Figure out which side on the point-to-point link is the DCE side or the DTE end
+### Passwords and security features
+
+#### Basic commands
 
 ```
-show controllers serial
+enable secret password                      (Set up the enable password)
+service password-encryption                 (Encrypting passwords)
+login block-for 120 attempts 3 within 60    (Block access after a certain number of connections)
 ```
 
-### Setting the enable password
-
-```
-enable secret password
-```
-
-### Encrypting passwords
-
-```
-service password-encryption
-```
-
-### Block access after a certain number of connections
-
-```
-login block-for 120 attempts 3 within 60
-```
-
-### Detailed password setup
+#### Detailed password setup
 
 ```
 enable
@@ -144,7 +159,19 @@ exit
 ### Set up a banner
 
 ```
-banner motd $21 is a prime number.$
+banner motd $21 is a prime number$
+```
+
+### Configure the clock for wired networks with serial cables
+
+```
+enable
+show ip interface brief     (to find out which serial to change the clock on)
+config t
+interface Serial 0/0/X      (with X the correct serial number)
+clock rate X                (with X the flow rate in bauds, for example 2 000 000)
+no shutdown
+exit
 ```
 
 ### Maintenance of router and switch files
@@ -157,21 +184,36 @@ pwd
 copy running-config usbflash0:
 ```
 
-## Routing
+### Erase the configuration of a device
 
-### Configure the IPv4 addresses of the interfaces
+```
+enable
+erase startup-config
+reload
+```
+
+> **Warning** :
+>
+> - On a switch, issue the following command before reloading : `delete flash:vlan.dat`
+> - In any case, never backup when it asks to!
+
+## Router configuration
+
+### IPv4
+
+#### Configure the IPv4 address of an interface
 
 ```
 enable
 configure terminal
 interface FastEthernet0/0
-ip address 192.168.X.X 255.X.X.X
+ip address 192.168.1.0 255.255.255.0
 description link to lan 1
 no shutdown
 exit
 ```
 
-### Configure the loopback address
+#### Configure the loopback address
 
 ```
 interface loopback 0
@@ -179,39 +221,30 @@ ip address 10.0.0.1 255.255.255.0
 exit
 ```
 
-### Configure the IPv6 addresses of the interfaces
-
-```
-enable
-conf t
-int fastethernet0/1
-ipv6 address 2001:db8:acab:1::1/64
-no shutdown
-exit
-```
-
-### Configure the IPv6 link local address
-
-```
-enable
-conf t
-int fastethernet0/1
-description link to lan 2
-ipv6 addresse fe80::1 link-local
-clock rate 200000
-no shutdown
-exit
-```
-
-### Define the default Gateway
+#### Define the default Gateway when IP routing is disabled
 
 ```
 ip default-gateway 192.168.10.1
 ```
 
-### Enable RIPv2
+#### IPv4 static routing
 
-> **Prerequisite** : The IP addresses of the interfaces must have been configured. _(see above)_
+```
+enable
+config t
+ip route 172.16.1.0 255.255.255.0 172.16.2.2       (next hop)
+ip route 172.16.1.0 255.255.255.0 G0/1             (on link)
+ip route 172.16.1.0 255.255.255.0 G0/1 172.16.2.2  (fully qualified)
+ip route 0.0.0.0 0.0.0.0 172.16.2.2                (gateway of last resort)
+exit
+show ip route
+```
+
+#### IPv4 dynamic routing
+
+##### Enable RIPv2
+
+> **Prerequisite** : The IP addresses of the interfaces must have been configured. [See above](#-Configure-the-IPv4-address-of-an-interface)
 
 ```
 enable
@@ -224,77 +257,15 @@ network X.X.X.X     (address of the 2nd network in which the router has an inter
 exit
 ```
 
-> **Observation** : `no auto-summary` allows to obtain subnet masks according to the configuration of the interfaces.
+> **Little tip** : `no auto-summary` allows to obtain subnet masks according to the configuration of the interfaces.
 
-### Configuring passive interfaces
+##### Configuring passive interfaces
 
 ```
 router rip
 passive-interface g0/0
 end
 ```
-
-### Configure IPv4 static routes
-
-```
-enable
-config t
-ip route 172.16.1.0 255.255.255.0 172.16.2.2       (next hop)
-ip route 172.16.1.0 255.255.255.0 G0/1             (on link)
-ip route 172.16.1.0 255.255.255.0 G0/1 172.16.2.2  (fully specified)
-ip route 0.0.0.0 0.0.0.0 172.16.2.2                (gateway of last resort)
-exit
-show ip route
-```
-
-### Configure IPv6 static routes
-
-```
-enable
-conf t
-ipv6 route 2001:0DB8:ACAB:1::/64 2001:0DB8:ACAD:3::1  (next hop)
-ipv6 route 2001:DB8:ACAD:2::/64 s0/0/0                (on link)
-ipv6 rpite 2001:DB8:ACAD:2::/64 fe80::2               (fully specified)
-ipv6 route ::/0 s0/0/0                                (gateway of last resort on link)
-ipv6 route ::/0 2001:DB8:ACAD:4::2                    (gateway of last resort by address)
-```
-
-### Configure the clock for wired networks with serial cables
-
-```
-enable
-show ip interface brief     (to find out which serial to change the clock on)
-config t
-interface Serial 0/0/X      (with X the correct serial number)
-clock rate X                (with X the flow rate in bauds, for example 2000000)
-no shutdown
-exit
-```
-
-### Configure a trunk link
-
-#### Clear the IP address of the master interface
-
-```
-interface FastEthernet 0/1
-no ip address
-no shutdown
-exit
-```
-
-#### Set up a vlan number on a sub interface
-
-```
-interface FastEthernet 0/1.1
-encapsulation dot1q 11
-ip adddress 192.168.1.1 255.255.255.0
-no shutdown
-exit
-```
-
-> **Notice** : The native vlan must not be specified on the router although it must be set up on the switch.
-
-### DHCP
 
 #### DHCPv4
 
@@ -314,15 +285,6 @@ end
 > **Notice** : It is also possible to exclude an address pool by issuing for example  
 > `ip dhcp excluded-address 192.168.10.1 192.168.10.9`.
 
-##### Display the DHCP configuration
-
-```
-show running-config | section dhcp
-show ip dhcp binding
-show ip dhcp server statistics
-show ip dhcp conflict
-```
-
 ##### Make a dhcp relay
 
 ```
@@ -330,6 +292,11 @@ conf t
 int g0/0
 ip helper-addresse 192.168.11.6
 ```
+
+> **Notice** :
+>
+> - g0/0 is the interface from which DHCP requests are received.
+> - 192.168.11.6 is the address of the DHCP server to which requests are relayed.
 
 ##### Configuring the router as a DHCP client
 
@@ -339,6 +306,126 @@ int g0/1
 ip address dhcp
 no shutdown
 end
+```
+
+#### NAT
+
+##### Setting up a static NAT translation
+
+```
+conf t
+ip nat inside source static 192.168.11.99 209.165.201.5
+interface serial0/0/0
+ip address 192.168.1.2 255.255.255.252
+ip nat inside
+exit
+int serial0/1/0
+ip address 209.165.100.1 255.255.255.252
+ip nat outside
+```
+
+##### Set up Dynamic NAT
+
+```
+conf t
+ip nat pool NAT-POOL1 209.165.200.226
+netmask 255.255.255.224
+access-list 1 permit 192.168.0.0 0.0.255.255
+ip nat inside source list 1 pool NAT-POOL1
+int serial 0/0/0
+ip nat inside
+```
+
+#### PAT
+
+##### PAT with a pool of external addresses
+
+```
+conf t
+ip nat pool NAT-POOL2 209.165.200.226 209.165.200.240 netmask 255.255.255.224
+access-list 1 permit 192.168.0.0 0.0.255.255
+ip nat inside source list 1 pool NAT-POOL2 overload
+int serial0/0/0
+ip nat inside
+int serial0/1/0
+ip nat outside
+```
+
+##### PAT configuration with only one external address
+
+```
+conf t
+ip nat inside source list 1 interface FastEthernet4 overload   (FastEthernet4 is the outbound interface)
+access-list 1 permit 192.168.20.0 0.0.0.255                    (Define which addresses are eligible to be translated)
+exit
+conf t
+interface Vlan1                                                (Vlan1 is the inbound interface)
+ip nat inside
+exit
+interface FastEthernet4                                        (FastEthernet4 is the outbound interface)
+ip nat outside
+```
+
+##### Setting up port forwarding
+
+The goal is to establish static translation between an inside local address and local port and an inside global address and global port.
+
+```
+conf t
+ip nat inside source static tcp 192.168.10.254 80 209.165.200.225 8080
+int serial0/0/0
+ip nat inside
+int serial0/1/0
+ip nat outside
+```
+
+##### Other examples
+
+```
+conf t
+access-list permit 192.16.0.0 0.0.255.255       (configure ACL1 to allow NAT translation)
+int serial0/0/0
+ip nat inside
+int serial0/1/0
+ip nat outside
+```
+
+### IPv6
+
+#### Configure the IPv6 addresses of the interfaces
+
+```
+enable
+conf t
+int fastethernet0/1
+ipv6 address 2001:db8:acab:1::1/64
+no shutdown
+exit
+```
+
+#### Configure the IPv6 link local address
+
+```
+enable
+conf t
+int fastethernet0/1
+description link to lan 2
+ipv6 addresse fe80::1 link-local
+clock rate 200000
+no shutdown
+exit
+```
+
+#### IPv6 static routing
+
+```
+enable
+conf t
+ipv6 route 2001:0DB8:ACAB:1::/64 2001:0DB8:ACAD:3::1    (next hop)
+ipv6 route 2001:DB8:ACAD:2::/64 s0/0/0                  (on link)
+ipv6 route 2001:DB8:ACAD:2::/64 fe80::2                 (next hop with link-local address)
+ipv6 route ::/0 s0/0/0                                  (gateway of last resort on link)
+ipv6 route ::/0 2001:DB8:ACAD:4::2                      (gateway of last resort by address)
 ```
 
 #### DHCPv6
@@ -358,7 +445,7 @@ ipv6 dhcp server IPV6-STATELESS
 ipv6 nb other-config-flag
 ```
 
-##### Statefull DHCPv6
+##### Stateful DHCPv6
 
 ```
 conf t
@@ -374,7 +461,7 @@ ipv6 dhcp server IPV6-STATEFUL
 ipv6 nb managed-config-flag
 ```
 
-##### Allow the router to receive a local link address
+##### Allow the router to receive a local link address via DHCPv6.
 
 ```
 int g0/1
@@ -385,158 +472,18 @@ ipv6 address dhcp
 ##### Configuring a router as a DHCPv6 relay agent
 
 ```
-int g0/1
+int g0/0
 ipv6 dhcp relay destination 2001:db8:cafe:1::6
 end
-show ipv6 dhcp interface g0/0
+show ipv6 dhcp interface g0/0       (To check the configuration)
 ```
 
-### NAT & PAT
+> **Notice** :
+>
+> - g0/0 is the interface from which DHCP requests are received.
+> - 2001:db8:cafe:1::6 is the address of the DHCPv6 server to which requests are relayed.
 
-#### Setting up a NAT translation
-
-```
-conf t
-ip nat inside source static 192.168.11.99 209.165.201.5
-interface serial0/0/0
-ip address 192.168.1.2 255.255.255.252
-ip nat inside
-exit
-int serial0/1/0
-ip address 209.165.100.1 255.255.255.252
-ip nat outside
-```
-
-#### Set up Dynamic NAT
-
-```
-conf t
-ip nat pool NAT-POOL1 209.165.200.226
-netmask 255.255.255.224
-access-list 1 permit 192.168.0.0 0.0.255.255
-ip nat inside source list 1 pool NAT-POOL1
-int serial 0/0/0
-ip nat inside
-```
-
-#### Setting up PAT
-
-```
-conf t
-ip nat pool NAT-POOL2 209.165.200.226
-netmask 255.255.255.224
-access-list 1 permit 192.168.0.0 0.0.255.255
-ip nat inside source list 1 pool NAT-POOL2 overload
-int serial0/0/0
-ip nat inside
-int serial0/1/0
-ip nat outside
-```
-
-#### PAT configuration with only one external address
-
-```
-conf t
-ip nat inside source list 1 interface FastEthernet4 overload   (FastEthernet4 is the outbound interface)
-access-list 1 permit 192.168.20.0 0.0.0.255
-exit
-conf t
-interface Vlan1                                                (Vlan1 is the inbound interface)
-ip nat inside
-exit
-interface FastEthernet4                                        (FastEthernet4 is the outbound interface)
-ip nat outside
-```
-
-#### Setting up port forwarding
-
-```
-conf t
-ip nat inside source static tcp 192.168.10.254 80 209.165.200.225
-int serial0/0/0
-ip nat inside
-int serial0/1/0
-ip nat outside
-```
-
-#### Other examples
-
-```
-conf t
-access-list permit 192.16.0.0 0.0.255.255       (configure ACL1 to allow NAT translation)
-int serial0/0/0
-ip nat inside
-int serial0/1/0
-ip nat outside
-```
-
-### CDP (Cisco Discovery Protocol)
-
-#### Activation
-
-```
-enable
-conf
-int giga0/1
-cdp enable
-```
-
-#### Deactivation
-
-```
-no cdp run
-exit
-```
-
-### LLDP
-
-```
-conf t
-lldp run
-int giga0/1
-lldp transmit
-lldp receive
-show lldp
-```
-
-### Network Time Protocol
-
-#### Setting the date and time
-
-```
-clock set 20:36:00 dec 11 2015
-```
-
-#### Configuring the NTP protocol
-
-```
-show click detail
-ntp server 209.165.200.225
-end
-show clock detail
-show ntp associations
-```
-
-### Erase the configuration
-
-```
-enable
-erase startup-config
-reload
-```
-
-## Switching
-
-### Erase the configuration
-
-```
-enable
-delete flash:vlan.dat
-erase startup-config
-reload
-```
-
-> **Warning** : Never backup when it asks to!
+## Switch configuration
 
 ### VLANs
 
@@ -559,14 +506,14 @@ name MyVLAN
 ```
 enable
 show vlan                     (to find out in which VLAN each interface is located)
-config-t
+config t
 interface FastEthernet0/X     (X = interface number)
 switchport mode access
 switchport access vlan X      (X = the number of the VLAN to which we want the interface to belong)
 exit
 ```
 
-#### Modification
+#### Remove an interface
 
 ```
 int fe0/1
@@ -582,20 +529,83 @@ no vlan 10
 end
 ```
 
-### Set up a trunk link with a router
+#### Trunk link
 
-> **Prerequisite** : The encapsulated VLANs (11 and 2 in the following example) must have been configured.
+Please refer to the section on [Router-on-a-stick configuration](#-Router-on-a-stick-configuration-:-create-a-trunk-link-between-a-switch-and-a-router)
+
+#### Remote management through SSH
+
+##### Allow remote management
 
 ```
 conf t
-int fe0/4
+ip domain-name span.com
+crypto key generate rsa general-keys modulus 1024
+username admin secret ccna
+line vty 0 15
+transport input ssh
+login local
+exit
+ip ssh version 2
+exit
+```
+
+##### Securing the VTY port
+
+```
+conf t
+line vty 0 4
+login local
+transport input ssh
+access-class 21 in
+exit
+access-list 21 permit 19.168.10.0 0.0.0.255
+access-list 21 deny any
+```
+
+## Router-on-a-stick configuration : create a trunk link between a switch and a router
+
+### Router side
+
+1. Clear the IP address of the master interface
+
+```
+interface FastEthernet 0/1
+no ip address
+no shutdown
+exit
+```
+
+2. Set up a vlan number on each sub interface
+
+```
+interface FastEthernet 0/1.1
+encapsulation dot1q 11                  (We are encapsulating the VLAN number 11)
+ip adddress 192.168.1.1 255.255.255.0
+no shutdown
+exit
+```
+
+You should repeat the commands above for each VLAN that needs to be encapsulated.
+
+> **Notice** : The native vlan must not be specified on the router although it must be set up on the switch.
+
+### Switch side
+
+#### Setting up the trunk link with the router
+
+> **Prerequisites** : The encapsulated VLANs (11 and 2 in the following example) must have been created and assigned to an interface. [See above](#-VLANs)
+
+```
+conf t
+int fe0/4                               (The interface which is linked to the router)
 switchport mode trunk
-switchport trunk native vlan 99
+switchport trunk native vlan 99         (The native VLAN does not need to be created beforehand)
 switchport trunk allowed vlan 11,2,99
 end
 ```
 
-### Deleting a trunk link
+#### Deleting a trunk link
 
 ```
 int fe0/1
@@ -603,6 +613,57 @@ no switchport trunk allowed vlan
 no switchport trunk native vlan
 switchport mode access
 end
+```
+
+## Other functionalities
+
+### Advanced features of a router
+
+#### CDP (Cisco Discovery Protocol)
+
+##### Activation
+
+```
+enable
+conf
+int giga0/1
+cdp enable
+```
+
+##### Deactivation
+
+```
+no cdp run
+exit
+```
+
+#### LLDP (Link Layer Discovery Protocol)
+
+```
+conf t
+lldp run
+int giga0/1
+lldp transmit
+lldp receive
+show lldp
+```
+
+#### NTP (Network Time Protocol)
+
+##### Setting the date and time on a router
+
+```
+clock set 20:36:00 dec 11 2015
+```
+
+##### Configuring the NTP protocol
+
+```
+show click detail
+ntp server 209.165.200.225
+end
+show clock detail
+show ntp associations
 ```
 
 ### Full duplex switch configuration
@@ -635,26 +696,11 @@ switchport mode access
 switchport port-security
 ```
 
-### Remote management through SSH
+### ACLs
 
-```
-conf t
-ip domain-name span.com
-crypto key generate rsa general-keys modulus 1024
-username admin secret ccna
-line vty 0 15
-transport input ssh
-login local
-exit
-ip ssh version 2
-exit
-```
+#### ACL handling
 
-## ACLs
-
-### ACL manipulation: create, delete, etc.
-
-#### Generic wildcard
+##### Generic wildcard
 
 ```
 conf t
@@ -668,7 +714,7 @@ conf t
 access-list 1 permit any
 ```
 
-#### Allow only one host
+##### Allow only one host
 
 ```
 access-list 1 permit 192.168.10.10 0.0.0.0
@@ -680,26 +726,32 @@ OR
 access-list 1 permit host 192.168.10.10
 ```
 
-#### Deny only one host
+##### Deny only one host
 
 ```
 access-list 1 deny host 192.168.10.10
 access-list 1 permit any
 ```
 
-#### Allow a range of IPs
+##### Allow a range of IPs
 
 ```
 access-list 10 permit 192.168.10.0 0.0.0.255
 ```
 
-#### Deleting an ACL
+##### Deleting an ACL
 
 ```
 no access-list 10
 ```
 
-### Configure an ACL on a specific interface
+##### Clear counters for an access list
+
+```
+clear access-lists 1
+```
+
+#### Configure an ACL on a specific interface
 
 ```
 conf t
@@ -713,7 +765,7 @@ ip access-group 1 out|in
 > - When you apply an ACL "in", the switch examines all traffic it RECEIVES on the interface against the ACL.
 > - When you apply an ACL "out" on an interface the switch examines any traffic attempting to leave that interface against the ACL.
 
-### Define a standard IP ACL
+#### Define a standard IP ACL
 
 Defines a standard IP access list and enters standard named access list configuration mode.
 
@@ -724,31 +776,4 @@ permit any
 exit
 int g0/0
 ip access-group NO_ACCESS out
-```
-
-### Securing the VTY port
-
-```
-conf t
-line vty 0 4
-login local
-transport input ssh
-access-class 21 in
-exit
-access-list 21 permit 19.168.10.0 0.0.0.255
-access-list 21 deny any
-```
-
-## End devices (PCs)
-
-### Configure the ip address of a PC (under CentOS 7) :
-
-```
-Click on the icon of the 2 cables connected at the bottom right (Or System Settings then Network)
-Click on the gear
-IPv4
-In "Addresses" Change Automatic (DHCP) to "Manual".
-Fill in the fields that appear
-Apply
-Then disconnect, reconnect with the widget that slides from left to right
 ```

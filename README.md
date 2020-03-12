@@ -69,6 +69,8 @@ traceroute                          (Determine the route to a destination by sen
 ping                                (Send ICMP echo packets to a specified host)
 debug ip icmp                       (Enable ICMP log messages)
 no debup ip icmp                    (Disable the ICMP log messages)
+debug ip rip                        (Enable RIP log messages)
+no debup ip rip                     (Disable the RIP log messages)
 ```
 
 ##### Routing debug

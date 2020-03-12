@@ -21,7 +21,7 @@ What are reliable networks?
 
 #### In case of troubles
 
-In order to be able to see all the data that are transmitted through the console port, you should start the modem control and terminal emulation program : `minicom`.  
+In order to be able to see all the data that is transmitted through the console port, you should start the modem control and terminal emulation program : `minicom`.  
 If there is a problem, you can either issue : `minicom -s` or press the following hotkeys : `Ctrl-A Z` In the event that minicom is already running.
 
 #### Configure the console port.

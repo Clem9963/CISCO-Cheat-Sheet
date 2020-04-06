@@ -382,17 +382,6 @@ int serial0/1/0
 ip nat outside
 ```
 
-##### Other examples
-
-```
-conf t
-access-list permit 192.16.0.0 0.0.255.255       (configure ACL1 to allow NAT translation)
-int serial0/0/0
-ip nat inside
-int serial0/1/0
-ip nat outside
-```
-
 ### IPv6
 
 #### Configure the IPv6 addresses of the interfaces

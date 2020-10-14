@@ -121,6 +121,7 @@ show ip dhcp conflict               (When hosts have statically assigned IP addr
 show interface vlan 10              (Display brief descriptive information about a specific VLAN)
 show vlan                           (Detailed display of VLANs)
 show vlan brief                     (Summary display of VLANs)
+show interface trunk                (Show trunk links)
 ```
 
 ### Passwords and security features
@@ -524,6 +525,39 @@ end
 #### Trunk link
 
 Please refer to the section on [Router-on-a-stick configuration](#-Router-on-a-stick-configuration-:-create-a-trunk-link-between-a-switch-and-a-router)
+
+#### VTP: VLAN Trunking Protocol
+
+##### Define the role of a switch
+
+```
+enable
+conf t
+vtp mode ROLE
+```
+
+> **Caption** :
+>
+> Three different values are available for the _"ROLE"_ field.
+> - _server_: Cisco switch configured as server is responsible for addition, deletion and / or modification of VLANs within VLAN domain. 
+> - _client_: Cisco switch configured as VTP client receives VTP advertisements from VTP server for addition, deletion and / or modification of VLANs.
+> - _transparent_: Cisco Switches configured as transparent mode can not only receive but also forward VTP advertisements in the VTP domain. However you can configure VLAN locally.
+
+##### Domain name
+
+```
+enable
+conf t
+vtp domain MyDomainName
+```
+
+##### Password
+
+```
+enable
+conf t
+vtp password StrongPassword
+```
 
 #### Remote management through SSH
 

@@ -21,8 +21,8 @@ What are reliable networks?
 
 #### In case of troubles
 
-In order to be able to see all the data that is transmitted through the console port, you should start the modem control and terminal emulation program : `minicom`.  
-If there is a problem, you can either issue : `minicom -s` or press the following hotkeys : `Ctrl-A Z` In the event that minicom is already running.
+In order to be able to see all the data that is transmitted through the console port, you should start the modem control and terminal emulation program: `minicom`.  
+If there is a problem, you can either issue: `minicom -s` or press the following hotkeys: `Ctrl-A Z` In the event that minicom is already running.
 
 #### Configure the console port.
 
@@ -37,6 +37,15 @@ Press enter
 ```
 
 ## Miscellaneous
+
+### Monitoring
+
+The `monitor` command can be used on a switch to redirect traffic on a specific interface.
+
+```
+monitor session 1 source interface FastEthernet0/1 - 15
+monitor session 1 destination interface FastEthernet0/20
+```
 
 ### Debugging
 
@@ -80,6 +89,7 @@ show ip route                       (Show the IPv4 routing table)
 show ipv6 route                     (Show the IPv6 routing table)
 show ip route | begin Gateway       (Show the gateway of last resort)
 show ip route static                (Show the static routes)
+show ip ospf neighbor               (Observe the neighbor data structure)
 ```
 
 ##### CDP debug
@@ -155,7 +165,7 @@ service password-encryption
 ```
 enable
 configure terminal
-hostame MyCoolRouter
+hostname MyCoolRouter
 exit
 ```
 
@@ -195,9 +205,9 @@ erase startup-config
 reload
 ```
 
-> **Warning** :
+> **Warning**:
 >
-> - On a switch, issue the following command before reloading : `delete flash:vlan.dat`
+> - On a switch, issue the following command before reloading: `delete flash:vlan.dat`
 > - In any case, never backup when it asks to!
 
 ## Router configuration
@@ -245,9 +255,11 @@ show ip route
 
 #### IPv4 dynamic routing
 
-##### Enable RIPv2
+##### RIP
 
-> **Prerequisite** : The IP addresses of the interfaces must have been configured. [See above](#-Configure-the-IPv4-address-of-an-interface)
+###### Enable RIPv2
+
+> **Prerequisite**: The IP addresses of the interfaces must have been configured. [See above](#-Configure-the-IPv4-address-of-an-interface)
 
 ```
 enable
@@ -260,15 +272,77 @@ network X.X.X.X     (address of the 2nd network in which the router has an inter
 exit
 ```
 
-> **Little tip** : `no auto-summary` allows to obtain subnet masks according to the configuration of the interfaces.
+> **Little tip**: `no auto-summary` allows to obtain subnet masks according to the configuration of the interfaces.
 
-##### Configuring passive interfaces
+###### Configuring passive interfaces
 
 ```
 router rip
 passive-interface g0/0
 end
 ```
+
+###### MD5 Authentication
+
+```
+key chain ka1
+key 1
+key-string XXX
+exit
+exit
+interface FastEthernet 0/0
+ip rip authentication mode md5
+ip rip authentication key-chain ka1
+```
+
+> **Caption**:
+>
+> - `XXX`: The actual password. It needs to be identical to the key-string on the remote.
+
+##### OSPF
+
+###### Enable OSPF
+
+```
+router ospf X
+network Y.Y.Y.Y Z.Z.Z.Z area 0
+exit
+```
+
+> **Caption**:
+>
+> - `X`: OSPF process number between 1 and 65535
+> - `Y.Y.Y.Y`: Network address (example: 145.1.0.0)
+> - `Z.Z.Z.Z`: Network wildcard (example: 0.0.255.255)
+
+###### Configure redistribution into RIP
+
+```
+enable
+conf t
+router rip
+redistribute ospf X metric 3     (X = OSPF process number)
+exit
+router ospf X                    (X = OSPF process number)
+redistribute rip metric 1 subnets
+exit
+```
+
+###### SHA Authentication
+
+```
+enable
+conf t
+key chain ka1
+key 1
+key-string XXX
+cryptographic-algorithm hmac-sha-256
+send-lifetime local 10:00:00 5 July 2013 infinite
+```
+
+> **Caption**:
+>
+> - `XXX`: The actual password. It needs to be identical to the key-string on the remote.
 
 #### DHCPv4
 
@@ -285,7 +359,7 @@ default-router 192.168.10.1            (default gateway)
 end
 ```
 
-> **Notice** : It is also possible to exclude an address pool by issuing for example  
+> **Notice**: It is also possible to exclude an address pool by issuing for example  
 > `ip dhcp excluded-address 192.168.10.1 192.168.10.9`.
 
 ##### Make a dhcp relay
@@ -296,7 +370,7 @@ int g0/0
 ip helper-addresse 192.168.11.6
 ```
 
-> **Notice** :
+> **Notice**:
 >
 > - g0/0 is the interface from which DHCP requests are received.
 > - 192.168.11.6 is the address of the DHCP server to which requests are relayed.
@@ -404,10 +478,14 @@ conf t
 int fastethernet0/1
 description link to lan 2
 ipv6 addresse fe80::1 link-local
-clock rate 200000
+clock rate R
 no shutdown
 exit
 ```
+
+> **Caption**:
+>
+> - `R`: The clock rate (2000000 on newer routers and 64000 on old routers)
 
 #### IPv6 static routing
 
@@ -471,7 +549,7 @@ end
 show ipv6 dhcp interface g0/0       (To check the configuration)
 ```
 
-> **Notice** :
+> **Notice**:
 >
 > - g0/0 is the interface from which DHCP requests are received.
 > - 2001:db8:cafe:1::6 is the address of the DHCPv6 server to which requests are relayed.
@@ -489,7 +567,7 @@ vlan 4
 name MyVLAN
 ```
 
-> **Warning** :
+> **Warning**:
 >
 > - The `conf t` command should be replaced by the `vlan database` command on old switches.
 > - NEVER modify vlan 1 since it is the default vlan.
@@ -589,7 +667,7 @@ access-list 21 permit 19.168.10.0 0.0.0.255
 access-list 21 deny any
 ```
 
-## Router-on-a-stick configuration : create a trunk link between a switch and a router
+## Router-on-a-stick configuration: create a trunk link between a switch and a router
 
 ### Router side
 
@@ -614,13 +692,13 @@ exit
 
 You should repeat the commands above for each VLAN that needs to be encapsulated.
 
-> **Notice** : The native vlan must not be specified on the router although it must be set up on the switch.
+> **Notice**: The native vlan must not be specified on the router although it must be set up on the switch.
 
 ### Switch side
 
 #### Setting up the trunk link with the router
 
-> **Prerequisites** : The encapsulated VLANs (11 and 2 in the following example) must have been created and assigned to an interface. [See above](#-VLANs)
+> **Prerequisites**: The encapsulated VLANs (11 and 2 in the following example) must have been created and assigned to an interface. [See above](#-VLANs)
 
 ```
 conf t
@@ -786,7 +864,7 @@ int serial0/0/0
 ip access-group 1 out|in
 ```
 
-> **Caption** :
+> **Caption**:
 >
 > - When you apply an ACL "in", the switch examines all traffic it RECEIVES on the interface against the ACL.
 > - When you apply an ACL "out" on an interface the switch examines any traffic attempting to leave that interface against the ACL.

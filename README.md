@@ -881,3 +881,75 @@ exit
 int g0/0
 ip access-group NO_ACCESS out
 ```
+
+## IPSEC
+
+Configuring IPSEC on 2 router (`Router 0` and `Router 2`).
+
+### Router 0
+
+```
+Router(config)#crypto isakmp enable
+Router(config-isakmp)#crypto isakmp policy 10
+Router(config-isakmp)#encryption aes 
+Router(config-isakmp)#authentication pre-share
+Router(config-isakmp)#hash sha
+Router(config-isakmp)#group 5
+Router(config-isakmp)#lifetime 86400
+Router(config-isakmp)#exit
+Router(config)#crypto isakmp key CLESECRETE address 102.0.0.253
+Router(config)#crypto ipsec transform-set VPN esp-aes esp-sha-hmac
+Router(config)#crypto ipsec security-association lifetime seconds 86400
+Router(config)#ip access-list extended VPNLIST
+Router(config-ext-nacl)#permit ip 10.0.0.0 0.255.255.255 20.0.0.0 0.255.255.255
+Router(config-ext-nacl)#exit
+Router(config)#crypto map CARTEVPN 10 ipsec-isakmp 
+Router(config-crypto-map)#match address VPNLIST
+Router(config-crypto-map)#set peer 102.0.0.253
+Router(config-crypto-map)#set transform-set VPN
+Router(config-crypto-map)#exit
+Router(config)#interface FastEthernet 0/1
+Router(config-if)#crypto map CARTEVPN
+*Jan  3 07:16:26.785: %CRYPTO-6-ISAKMP_ON_OFF: ISAKMP is ON
+Router(config-if)#exit
+Router(config)#exit
+Router#ip route 20.0.0.0 255.0.0.0 102.0.0.253
+Router#copy running-config startup-config
+```
+
+### Router 2
+
+```
+Router(config)#crypto isakmp enable
+Router(config-isakmp)#crypto isakmp policy 10
+Router(config-isakmp)#encryption aes 
+Router(config-isakmp)#authentication pre-share
+Router(config-isakmp)#hash sha
+Router(config-isakmp)#group 5
+Router(config-isakmp)#lifetime 86400
+Router(config-isakmp)#exit
+Router(config)#crypto isakmp key CLESECRETE address 101.0.0.253
+Router(config)#crypto ipsec transform-set VPN esp-aes esp-sha-hmac
+Router(config)#crypto ipsec security-association lifetime seconds 86400
+Router(config)#ip access-list extended VPNLIST
+Router(config-ext-nacl)#permit ip 20.0.0.0 0.255.255.255 10.0.0.0 0.255.255.255
+Router(config-ext-nacl)#exit
+Router(config)#crypto map CARTEVPN 10 ipsec-isakmp 
+Router(config-crypto-map)#match address VPNLIST
+Router(config-crypto-map)#set peer 101.0.0.253
+Router(config-crypto-map)#set transform-set VPN
+Router(config-crypto-map)#exit
+Router(config)#interface FastEthernet 0/1
+Router(config-if)#crypto map CARTEVPN
+*Jan  3 07:16:26.785: %CRYPTO-6-ISAKMP_ON_OFF: ISAKMP is ON
+Router(config-if)#exit
+Router(config)#exit
+Router#ip route 10.0.0.0 255.0.0.0 101.0.0.253
+Router#copy running-config startup-config
+```
+
+You can show crypto map for further information about IPSEC.
+
+```
+show ctypto map
+```

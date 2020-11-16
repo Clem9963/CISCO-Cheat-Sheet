@@ -617,7 +617,8 @@ vtp mode ROLE
 > **Caption** :
 >
 > Three different values are available for the _"ROLE"_ field.
-> - _server_: Cisco switch configured as server is responsible for addition, deletion and / or modification of VLANs within VLAN domain. 
+>
+> - _server_: Cisco switch configured as server is responsible for addition, deletion and / or modification of VLANs within VLAN domain.
 > - _client_: Cisco switch configured as VTP client receives VTP advertisements from VTP server for addition, deletion and / or modification of VLANs.
 > - _transparent_: Cisco Switches configured as transparent mode can not only receive but also forward VTP advertisements in the VTP domain. However you can configure VLAN locally.
 
@@ -882,74 +883,87 @@ int g0/0
 ip access-group NO_ACCESS out
 ```
 
-## IPSEC
+#### Configuring an ACL when using IPSEC
 
-Configuring IPSEC on 2 router (`Router 0` and `Router 2`).
+```
+Router(config)#access-list 100 deny ip 10.0.0.0 0.255.255.255 20.0.0.0 0.255.255.255
+Router(config)#access-list 100 permit ip 10.0.0.0 0.255.255.255 any
+```
 
-### Router 0
+This ACL prohibits hosts located in the 10.0.0.0/24 network from exiting through the router to access hosts located in the 20.0.0.0/24 network.  
+This ACL can then be used to create an encrypted channel between the two networks. Of course, the router that acts as a gateway for the 20.0.0.0/24 network must also create an equivalent ACL.
+
+### IPSEC
+
+Configuring IPSEC on a router.
+
+#### Step 1
 
 ```
 Router(config)#crypto isakmp enable
 Router(config-isakmp)#crypto isakmp policy 10
-Router(config-isakmp)#encryption aes 
+Router(config-isakmp)#encryption aes
 Router(config-isakmp)#authentication pre-share
 Router(config-isakmp)#hash sha
 Router(config-isakmp)#group 5
 Router(config-isakmp)#lifetime 86400
 Router(config-isakmp)#exit
-Router(config)#crypto isakmp key CLESECRETE address 102.0.0.253
+```
+
+#### Step 2
+
+```
+Router(config)#crypto isakmp key YOUR_SECRET_KEY_HERE address X.X.X.X
 Router(config)#crypto ipsec transform-set VPN esp-aes esp-sha-hmac
 Router(config)#crypto ipsec security-association lifetime seconds 86400
+```
+
+> **Caption**:
+>
+> - X.X.X.X is the address of the remote router with which the encrypted connection will take place.
+
+#### Step 3
+
+```
 Router(config)#ip access-list extended VPNLIST
-Router(config-ext-nacl)#permit ip 10.0.0.0 0.255.255.255 20.0.0.0 0.255.255.255
+Router(config-ext-nacl)#permit ip  Y.Y.Y.Y  A.A.A.A  Z.Z.Z.Z  B.B.B.B
 Router(config-ext-nacl)#exit
-Router(config)#crypto map CARTEVPN 10 ipsec-isakmp 
+```
+
+> **Caption**:
+>
+> - Y.Y.Y.Y is the address of the internal network (LAN of the current router).
+> - Z.Z.Z.Z is the address of the remote network with which the encrypted connection will take place (LAN of the remote router).
+> - A.A.A.A is the wildcard for the Y.Y.Y.Y network.
+> - B.B.B.B is the wildcard for the Z.Z.Z.Z network.
+
+#### Step 4
+
+```
+Router(config)#crypto map YOUR_CRYPTO_MAP_NAME_HERE 10 ipsec-isakmp
 Router(config-crypto-map)#match address VPNLIST
-Router(config-crypto-map)#set peer 102.0.0.253
+Router(config-crypto-map)#set peer X.X.X.X
 Router(config-crypto-map)#set transform-set VPN
 Router(config-crypto-map)#exit
-Router(config)#interface FastEthernet 0/1
-Router(config-if)#crypto map CARTEVPN
-*Jan  3 07:16:26.785: %CRYPTO-6-ISAKMP_ON_OFF: ISAKMP is ON
-Router(config-if)#exit
-Router(config)#exit
-Router#ip route 20.0.0.0 255.0.0.0 102.0.0.253
-Router#copy running-config startup-config
 ```
 
-### Router 2
+> **Caption**:
+>
+> - X.X.X.X is the address of the remote router with which the encrypted connection will take place.
+
+#### Step 5
 
 ```
-Router(config)#crypto isakmp enable
-Router(config-isakmp)#crypto isakmp policy 10
-Router(config-isakmp)#encryption aes 
-Router(config-isakmp)#authentication pre-share
-Router(config-isakmp)#hash sha
-Router(config-isakmp)#group 5
-Router(config-isakmp)#lifetime 86400
-Router(config-isakmp)#exit
-Router(config)#crypto isakmp key CLESECRETE address 101.0.0.253
-Router(config)#crypto ipsec transform-set VPN esp-aes esp-sha-hmac
-Router(config)#crypto ipsec security-association lifetime seconds 86400
-Router(config)#ip access-list extended VPNLIST
-Router(config-ext-nacl)#permit ip 20.0.0.0 0.255.255.255 10.0.0.0 0.255.255.255
-Router(config-ext-nacl)#exit
-Router(config)#crypto map CARTEVPN 10 ipsec-isakmp 
-Router(config-crypto-map)#match address VPNLIST
-Router(config-crypto-map)#set peer 101.0.0.253
-Router(config-crypto-map)#set transform-set VPN
-Router(config-crypto-map)#exit
-Router(config)#interface FastEthernet 0/1
-Router(config-if)#crypto map CARTEVPN
-*Jan  3 07:16:26.785: %CRYPTO-6-ISAKMP_ON_OFF: ISAKMP is ON
-Router(config-if)#exit
-Router(config)#exit
-Router#ip route 10.0.0.0 255.0.0.0 101.0.0.253
-Router#copy running-config startup-config
+Router(config)#interface FastEthernet 0/1   (FastEthernet 0/1 is the outbound interface)
+Router(config-if)#crypto map YOUR_CRYPTO_MAP_NAME_HERE
 ```
 
-You can show crypto map for further information about IPSEC.
+#### Further information
+
+You can show further information about IPSEC with the following commands:
 
 ```
-show ctypto map
+show crypto map
+show crypto ipsec sa
+show crypto isakmp policy
 ```

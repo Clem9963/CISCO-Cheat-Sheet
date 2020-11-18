@@ -344,6 +344,23 @@ send-lifetime local 10:00:00 5 July 2013 infinite
 >
 > - `XXX`: The actual password. It needs to be identical to the key-string on the remote.
 
+##### EIGRP
+
+###### Enable EIGRP
+
+```
+Router(config)# router eigrp 1                          (1 is the autonomous system number)
+Router(config-router)# eigrp router-id 1.1.1.1
+Router(config-router)# network 10.0.0.0
+Router(config-router)# network 192.168.10.8 0.0.0.3     (0.0.0.3 is a network wildcard)
+```
+
+> **Notes**:
+>
+> The _"eigrp router-id \<ipv4-address\>"_ router configuration command is the preferred method used to configure the EIGRP router ID. This method takes precedence over any configured loopback or physical interface IPv4 addresses.
+>
+> By default, when using the _"network"_ command and an IPv4 network address, such as 172.16.0.0, all interfaces on the router that belong to that classful network address are enabled for EIGRP. However, there may be times when we do not want to include all interfaces within a network when enabling EIGRP. For example, in the example above, we only want to enable EIGRP on the router, but only for the subnet 192.168.10.8 with the mask 255.255.255.252.
+
 #### DHCPv4
 
 ##### Set up a DHCP server
@@ -886,8 +903,8 @@ ip access-group NO_ACCESS out
 #### Configuring an ACL when using IPSEC
 
 ```
-Router(config)#access-list 100 deny ip 10.0.0.0 0.255.255.255 20.0.0.0 0.255.255.255
-Router(config)#access-list 100 permit ip 10.0.0.0 0.255.255.255 any
+Router(config)# access-list 100 deny ip 10.0.0.0 0.255.255.255 20.0.0.0 0.255.255.255
+Router(config)# access-list 100 permit ip 10.0.0.0 0.255.255.255 any
 ```
 
 This ACL prohibits hosts located in the 10.0.0.0/24 network from exiting through the router to access hosts located in the 20.0.0.0/24 network.  
@@ -900,22 +917,22 @@ Configuring IPSEC on a router.
 #### Step 1
 
 ```
-Router(config)#crypto isakmp enable
-Router(config-isakmp)#crypto isakmp policy 10
-Router(config-isakmp)#encryption aes
-Router(config-isakmp)#authentication pre-share
-Router(config-isakmp)#hash sha
-Router(config-isakmp)#group 5
-Router(config-isakmp)#lifetime 86400
-Router(config-isakmp)#exit
+Router(config)# crypto isakmp enable
+Router(config-isakmp)# crypto isakmp policy 10
+Router(config-isakmp)# encryption aes
+Router(config-isakmp)# authentication pre-share
+Router(config-isakmp)# hash sha
+Router(config-isakmp)# group 5
+Router(config-isakmp)# lifetime 86400
+Router(config-isakmp)# exit
 ```
 
 #### Step 2
 
 ```
-Router(config)#crypto isakmp key YOUR_SECRET_KEY_HERE address X.X.X.X
-Router(config)#crypto ipsec transform-set VPN esp-aes esp-sha-hmac
-Router(config)#crypto ipsec security-association lifetime seconds 86400
+Router(config)# crypto isakmp key YOUR_SECRET_KEY_HERE address X.X.X.X
+Router(config)# crypto ipsec transform-set VPN esp-aes esp-sha-hmac
+Router(config)# crypto ipsec security-association lifetime seconds 86400
 ```
 
 > **Caption**:
@@ -925,9 +942,9 @@ Router(config)#crypto ipsec security-association lifetime seconds 86400
 #### Step 3
 
 ```
-Router(config)#ip access-list extended VPNLIST
-Router(config-ext-nacl)#permit ip  Y.Y.Y.Y  A.A.A.A  Z.Z.Z.Z  B.B.B.B
-Router(config-ext-nacl)#exit
+Router(config)# ip access-list extended VPNLIST
+Router(config-ext-nacl)# permit ip  Y.Y.Y.Y  A.A.A.A  Z.Z.Z.Z  B.B.B.B
+Router(config-ext-nacl)# exit
 ```
 
 > **Caption**:
@@ -940,11 +957,11 @@ Router(config-ext-nacl)#exit
 #### Step 4
 
 ```
-Router(config)#crypto map YOUR_CRYPTO_MAP_NAME_HERE 10 ipsec-isakmp
-Router(config-crypto-map)#match address VPNLIST
-Router(config-crypto-map)#set peer X.X.X.X
-Router(config-crypto-map)#set transform-set VPN
-Router(config-crypto-map)#exit
+Router(config)# crypto map YOUR_CRYPTO_MAP_NAME_HERE 10 ipsec-isakmp
+Router(config-crypto-map)# match address VPNLIST
+Router(config-crypto-map)# set peer X.X.X.X
+Router(config-crypto-map)# set transform-set VPN
+Router(config-crypto-map)# exit
 ```
 
 > **Caption**:
@@ -954,8 +971,8 @@ Router(config-crypto-map)#exit
 #### Step 5
 
 ```
-Router(config)#interface FastEthernet 0/1   (FastEthernet 0/1 is the outbound interface)
-Router(config-if)#crypto map YOUR_CRYPTO_MAP_NAME_HERE
+Router(config)# interface FastEthernet 0/1   (FastEthernet 0/1 is the outbound interface)
+Router(config-if)# crypto map YOUR_CRYPTO_MAP_NAME_HERE
 ```
 
 #### Further information
